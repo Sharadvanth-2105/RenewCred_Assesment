@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: renewcred_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - renewcred-net
+
+  backend:
+    build: ./backend
+    container_name: renewcred_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongo:27017/renewcred
+      - JWT_SECRET=renewcred_super_secret_jwt_key_2026
+      - ADMIN_EMAIL=admin@renewcred.com
+      - ADMIN_PASSWORD=admin123
+    depends_on:
+      - mongo
+    networks:
+      - renewcred-net
+
+  admin-frontend:
+    build: ./admin-frontend
+    container_name: renewcred_admin
+    ports:
+      - "3001:3001"
+    environment:
+      - VITE_API_URL=http://localhost:5000/api/v1
+    depends_on:
+      - backend
+    networks:
+      - renewcred-net
+
+  public-frontend:
+    build: ./public-frontend
+    container_name: renewcred_public
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:5000/api/v1
+    depends_on:
+      - backend
+    networks:
+      - renewcred-net
+
+networks:
+  renewcred-net:
+    driver: bridge
+
+volumes:
+  mongo-data:
